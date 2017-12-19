@@ -61,7 +61,7 @@ subscriptions model =
 
 
 type Msg
-    = Increment
+    = Click
     | AddAmountPerSecond Time
     | SaveGame Time
 
@@ -69,7 +69,7 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Increment ->
+        Click ->
             ( { model | clicks = model.clicks + 1, money = model.money + round (1 * model.multiplier) }, Cmd.none )
 
         AddAmountPerSecond _ ->
@@ -87,5 +87,5 @@ view : Model -> Html Msg
 view model =
     div [ class "site__wrapper" ]
         [ div [ class "score" ] [ text <| "current money: " ++ toString model.money ++ " $" ]
-        , img [ class "clicker", src "static/img/clicker.png", onClick Increment ] []
+        , img [ class "clicker", src "static/img/clicker.png", onClick Click ] []
         ]
