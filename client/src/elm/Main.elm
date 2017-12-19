@@ -3,8 +3,7 @@ port module Main exposing (..)
 import Html exposing (Html, div, img, text)
 import Html.Attributes exposing (class, src)
 import Html.Events exposing (onClick)
-import Json.Decode as Json exposing (Decoder, Value)
-import Json.Decode.Pipeline as Json
+import Time exposing (Time, minute, second)
 
 
 -- Ports
@@ -35,12 +34,13 @@ type alias Model =
     { money : Int
     , clicks : Int
     , multiplier : Float
+    , amountPerSecond : Float
     }
 
 
 initialModel : Model
 initialModel =
-    { money = 0, clicks = 0, multiplier = 1 }
+    { money = 0, clicks = 0, multiplier = 1, amountPerSecond = 0 }
 
 
 init : ( Model, Cmd Msg )
@@ -50,19 +50,10 @@ init =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
-
-
-
--- DECODER
-
-
-saveGameDecoder : Decoder Model
-saveGameDecoder =
-    Json.decode Model
-        |> Json.optional "money" Json.int 0
-        |> Json.optional "clicks" Json.int 0
-        |> Json.optional "multiplier" Json.float 1
+    Sub.batch
+        [ Time.every second AddAmountPerSecond
+        , Time.every minute SaveGame
+        ]
 
 
 
@@ -71,20 +62,21 @@ saveGameDecoder =
 
 type Msg
     = Increment
-    | ReadGame (Maybe Model)
+    | AddAmountPerSecond Time
+    | SaveGame Time
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Increment ->
-            ( { model | clicks = model.clicks + 1, money = model.money + round (1 * model.multiplier) }, saveGameToLocalStorage model )
+            ( { model | clicks = model.clicks + 1, money = model.money + round (1 * model.multiplier) }, Cmd.none )
 
-        ReadGame Nothing ->
-            ( model, Cmd.none )
+        AddAmountPerSecond _ ->
+            ( { model | money = model.money + round (model.amountPerSecond * model.multiplier) }, Cmd.none )
 
-        ReadGame maybeModel ->
-            ( initialModel, Cmd.none )
+        SaveGame _ ->
+            ( model, Cmd.batch [ saveGameToLocalStorage model ] )
 
 
 
